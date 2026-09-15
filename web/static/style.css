@@ -1,5 +1,8 @@
 * { box-sizing: border-box; }
 
+/* a class with a display rule outranks the hidden attribute otherwise */
+[hidden] { display: none !important; }
+
 body {
   max-width: 44rem;
   margin: 0 auto;
@@ -80,6 +83,12 @@ button {
 }
 
 button:hover { background: #000; color: #fff; }
+
+/* keep the focus ring black rather than the browser's blue */
+:focus-visible {
+  outline: 2px solid #000;
+  outline-offset: 1px;
+}
 
 .row {
   display: flex;
