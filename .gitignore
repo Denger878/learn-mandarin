@@ -5,3 +5,4 @@ venv/
 *.db
 .DS_Store
 .env
+scratch/
