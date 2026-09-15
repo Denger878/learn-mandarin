@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS terms (
     meaning TEXT,
     status TEXT NOT NULL DEFAULT 'new',
     streak INTEGER NOT NULL DEFAULT 0,
-    due_at TEXT
+    wrong_streak INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS imports (
@@ -34,3 +34,4 @@ CREATE TABLE IF NOT EXISTS reviews (
 
 CREATE INDEX IF NOT EXISTS idx_sightings_term ON sightings(term_id);
 CREATE INDEX IF NOT EXISTS idx_reviews_term ON reviews(term_id);
+CREATE INDEX IF NOT EXISTS idx_terms_status ON terms(status);
