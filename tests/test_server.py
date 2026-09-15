@@ -2,10 +2,14 @@ import json
 import threading
 import urllib.error
 import urllib.request
+from pathlib import Path
 
 import pytest
 
-from web.server import create_server
+from web.server import DIST, create_server
+
+built = (DIST / "index.html").is_file()
+needs_build = pytest.mark.skipif(not built, reason="frontend not built (cd frontend && npm run build)")
 
 TEXT = "今天天气很好。明天我要去学校。"
 
@@ -47,24 +51,34 @@ def post_json(url, path, payload):
         return json.loads(response.read())
 
 
+@needs_build
 def test_index_is_served(base_url):
     status, body, content_type = get(base_url, "/")
     assert status == 200
     assert b"learn mandarin" in body
     assert content_type.startswith("text/html")
 
-def test_stylesheet_and_script_are_served(base_url):
-    assert get(base_url, "/static/style.css")[2].startswith("text/css")
-    assert get(base_url, "/static/app.js")[2].startswith("text/javascript")
+@needs_build
+def test_the_built_assets_are_served(base_url):
+    index = (DIST / "index.html").read_text(encoding="utf-8")
+    for asset in DIST.glob("assets/*"):
+        path = f"/assets/{asset.name}"
+        assert path in index, f"{path} is not referenced by index.html"
+        status, _, content_type = get(base_url, path)
+        assert status == 200
+        expected = "text/css" if asset.suffix == ".css" else "text/javascript"
+        assert content_type.startswith(expected)
 
+@needs_build
 def test_unknown_path_is_404(base_url):
     with pytest.raises(urllib.error.HTTPError) as caught:
         get(base_url, "/nope")
     assert caught.value.code == 404
 
-def test_static_cannot_escape_its_directory(base_url):
+@needs_build
+def test_static_cannot_escape_the_build(base_url):
     with pytest.raises(urllib.error.HTTPError) as caught:
-        get(base_url, "/static/../server.py")
+        get(base_url, "/../server.py")
     assert caught.value.code == 404
 
 def test_stats_start_empty(base_url):

@@ -12,8 +12,31 @@ from pathlib import Path
 from db import repo
 from web.api import App
 
-STATIC = Path(__file__).parent / "static"
-CONTENT_TYPES = {".html": "text/html", ".css": "text/css", ".js": "text/javascript"}
+DIST = Path(__file__).parent / "dist"
+
+CONTENT_TYPES = {
+    ".html": "text/html",
+    ".css": "text/css",
+    ".js": "text/javascript",
+    ".json": "application/json",
+    ".svg": "image/svg+xml",
+    ".ico": "image/x-icon",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".woff": "font/woff",
+    ".woff2": "font/woff2",
+    ".map": "application/json",
+}
+
+NOT_BUILT_PAGE = b"""<!DOCTYPE html><html><head><meta charset="utf-8">
+<title>learn mandarin</title></head>
+<body style="font:16px system-ui;max-width:32rem;margin:15vh auto;padding:0 1rem">
+<h1 style="font-size:1.1rem">The interface hasn't been built yet.</h1>
+<p>Run this once, then reload:</p>
+<pre style="background:#f4f4f4;padding:1rem;border-radius:8px">cd frontend
+npm install
+npm run build</pre>
+</body></html>"""
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -23,11 +46,9 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         path = self.path.split("?")[0]
-        if path == "/":
-            return self._send_static("index.html")
-        if path.startswith("/static/"):
-            return self._send_static(path[len("/static/"):])
-        self._route(self._get_api, path)
+        if path.startswith("/api/"):
+            return self._route(self._get_api, path)
+        self._send_static(path.lstrip("/") or "index.html")
 
     def do_POST(self):
         body = self._read_json()
@@ -87,12 +108,17 @@ class Handler(BaseHTTPRequestHandler):
             return None
 
     def _send_static(self, name):
-        target = (STATIC / name).resolve()
-        if not target.is_file() or STATIC.resolve() not in target.parents:
+        """Serve a file out of the Vite build."""
+        root = DIST.resolve()
+        if not (root / "index.html").is_file():
+            return self._respond(503, "text/html; charset=utf-8", NOT_BUILT_PAGE)
+
+        target = (root / name).resolve()
+        if not target.is_file() or root not in target.parents:
             return self._send_error(404, "Not found")
-        body = target.read_bytes()
+
         content_type = CONTENT_TYPES.get(target.suffix, "application/octet-stream")
-        self._respond(200, f"{content_type}; charset=utf-8", body)
+        self._respond(200, f"{content_type}; charset=utf-8", target.read_bytes())
 
     def _send_json(self, payload, status=200):
         self._respond(status, "application/json; charset=utf-8",
