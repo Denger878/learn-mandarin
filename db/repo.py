@@ -13,7 +13,6 @@ def init_db(conn):
     conn.commit()
     return
 
-
 def get_term_by_hanzi(conn, hanzi):
     """Return the term's id, or None if not found."""
     row = conn.execute("SELECT id FROM terms WHERE hanzi = ?", (hanzi,)).fetchone()
