@@ -21,3 +21,5 @@ def test_segment_drops_punctuation():
     assert segment("你好，世界！") == ["你好", "世界"]
 def test_segment_empty_string():
     assert segment("") == []
+def test_segment_no_chinese():
+    assert segment("max is awesome") == []
