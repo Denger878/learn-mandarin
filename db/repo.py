@@ -18,13 +18,13 @@ def get_term_by_hanzi(conn, hanzi):
     row = conn.execute("SELECT id FROM terms WHERE hanzi = ?", (hanzi,)).fetchone()
     return row[0] if row else None
 
-def insert_term(conn, hanzi, pinyin):
+def insert_term(conn, hanzi, pinyin, meaning=None):
     """Insert a new term, return its new id."""
-    cur = conn.execute("INSERT INTO terms (hanzi, pinyin) VALUES (?, ?)", (hanzi, pinyin))
+    cur = conn.execute("INSERT INTO terms (hanzi, pinyin, meaning) VALUES (?, ?, ?)", (hanzi, pinyin, meaning))
     id = cur.lastrowid
     return id
 
-def get_or_create_term(conn, hanzi, pinyin):
+def get_or_create_term(conn, hanzi, pinyin, meaning=None):
     """Return existing id if the word is known, otherwise insert and return the new id."""
     existing = get_term_by_hanzi(conn, hanzi)
     if existing is not None:

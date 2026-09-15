@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS terms (
     id INTEGER PRIMARY KEY,
     hanzi TEXT NOT NULL UNIQUE,
     pinyin TEXT NOT NULL,
+    meaning TEXT,
     status TEXT NOT NULL DEFAULT 'new',
     streak INTEGER NOT NULL DEFAULT 0,
     due_at TEXT
