@@ -2,7 +2,7 @@ import sqlite3
 from pathlib import Path
 SCHEMA_PATH = Path(__file__).parent / "schema.sql"
 
-def connect(db_path):
+def connect(db_path="mandarin.db"):
     conn = sqlite3.connect(db_path)
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
@@ -11,6 +11,7 @@ def init_db(conn):
     """Run schema.sql to create tables if needed."""
     conn.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
     conn.commit()
+    return
 
 
 def get_term_by_hanzi(conn, hanzi):
