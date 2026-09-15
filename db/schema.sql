@@ -32,5 +32,5 @@ CREATE TABLE IF NOT EXISTS reviews (
     correct INTEGER NOT NULL
 );
 
-CREATE INDEX idx_sightings_term ON sightings(term_id);
-CREATE INDEX idx_reviews_term ON reviews(term_id);
+CREATE INDEX IF NOT EXISTS idx_sightings_term ON sightings(term_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_term ON reviews(term_id);
