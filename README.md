@@ -45,7 +45,6 @@ side and use the Vite URL:
     core/      pure logic: segmenting, pinyin comparison, the scheduler
     db/        every line of SQL in the project
     ingest/    turning pasted text into sightings
-    drill/     joins the scheduler to the database, owns the transaction
-    web/       local HTTP server and the JSON API
+    web/       the JSON API (api.py) and the local HTTP server (server.py)
     frontend/  React interface (Vite); builds into web/dist
     tests/     pytest

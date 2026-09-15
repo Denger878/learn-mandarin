@@ -65,6 +65,27 @@ def test_a_correct_answer_reveals_the_pinyin(app):
     assert result["correct"] is True
     assert result["pinyin"] == term["pinyin"]
 
+def test_spaces_and_tones_are_forgiven(app):
+    app.import_text("明天", "dm")
+    card = app.next_card("learn")["card"]
+    assert app.answer("learn", card["id"], "  Ming Tian  ")["correct"] is True
+
+def test_every_answer_is_logged(app):
+    app.import_text(TEXT, "dm")
+    card = app.next_card("learn")["card"]
+    pinyin = repo.get_term(app.conn, card["id"])["pinyin"]
+    app.answer("learn", card["id"], pinyin)
+    app.answer("learn", card["id"], "oops")
+    rows = app.conn.execute("SELECT answer_given, correct FROM reviews ORDER BY id").fetchall()
+    assert [(r["answer_given"], r["correct"]) for r in rows] == [(pinyin, 1), ("oops", 0)]
+
+def test_a_wrong_answer_is_saved_to_the_term(app):
+    app.import_text(TEXT, "dm")
+    card = app.next_card("learn")["card"]
+    app.answer("learn", card["id"], "zzz")
+    row = repo.get_term(app.conn, card["id"])
+    assert (row["status"], row["streak"], row["wrong_streak"]) == ("learning", 0, 1)
+
 def test_a_wrong_answer_still_reveals_the_pinyin(app):
     app.import_text(TEXT, "dm")
     card = app.next_card("learn")["card"]

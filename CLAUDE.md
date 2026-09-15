@@ -8,8 +8,8 @@ weighted frequency, drills them by typing toneless pinyin.
 - core/ modules are pure logic: no database, no I/O. Testable with fabricated data.
 - Frequency is always derived from the sightings table, never stored as a counter.
 - Transactions: repo functions don't commit; the caller does, once per logical operation.
-- drill/session.py is the only place core/ and db/ meet. It pulls the ranked
-  queue, grades the answer, writes it back, and commits once per card.
+- web/api.py is the only place core/ and db/ meet. It pulls the ranked pile,
+  grades the answer, writes it back, and commits once per card.
 
 ## Stack
 Python 3.13, SQLite, jieba, pypinyin, pytest.

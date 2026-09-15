@@ -1,12 +1,16 @@
-"""The three things the interface can do, as plain functions over plain dicts.
+"""Everything the interface can do, as plain methods over plain dicts.
 
-No HTTP here: web/server.py wraps this. Each drill mode keeps its own Session,
-so the in-memory cooldown survives between requests for as long as the app runs.
+No HTTP here: web/server.py wraps this. This is also the only place core/ and
+db/ meet -- it pulls the ranked pile, grades the answer, writes it back, and
+commits once per card. Each mode keeps its own cooldown, which lives in memory
+for as long as the app is running.
 """
 
+from datetime import datetime, timezone
+
 from core import scheduler
+from core.normalize import is_correct
 from db import repo
-from drill.session import Session
 from ingest.loader import content_hash, ingest_text
 
 SOURCES = ("dm", "gc", "discovery", "other")
@@ -15,9 +19,9 @@ SOURCES = ("dm", "gc", "discovery", "other")
 class App:
     def __init__(self, conn):
         self.conn = conn
-        self.sessions = {
-            scheduler.LEARN: Session(conn, scheduler.LEARN),
-            scheduler.REVIEW: Session(conn, scheduler.REVIEW),
+        self.cooldowns = {
+            scheduler.LEARN: scheduler.Scheduler(),
+            scheduler.REVIEW: scheduler.Scheduler(),
         }
 
     # --- tab 1: input text --------------------------------------------------
@@ -42,11 +46,16 @@ class App:
 
     # --- tabs 2 and 3: drilling ---------------------------------------------
 
+    def queue(self, mode):
+        """The ranked pile for one mode, straight from the database."""
+        if self._checked(mode) == scheduler.LEARN:
+            return repo.learn_queue(self.conn)
+        return repo.review_queue(self.conn)
+
     def next_card(self, mode):
         """The next word to show. Pinyin is withheld until the answer is graded."""
-        session = self.sessions[self._checked(mode)]
-        queue = session.queue()
-        card = session.scheduler.next_term(queue)
+        queue = self.queue(mode)
+        card = self.cooldowns[mode].next_term(queue)
         if card is None:
             return {"card": None, "remaining": len(queue)}
         return {
@@ -61,14 +70,24 @@ class App:
         }
 
     def answer(self, mode, term_id, guess):
-        """Grade a typed guess and report what it did to the word."""
-        session = self.sessions[self._checked(mode)]
+        """Grade a typed guess, save it, and report what it did to the word."""
+        self._checked(mode)
         term = repo.get_term(self.conn, term_id)
         if term is None:
             return {"ok": False, "message": "No such word."}
 
+        guess = guess or ""
         was = term["status"]
-        correct, changes = session.answer(term, guess or "")
+        correct = is_correct(term["pinyin"], guess)
+        changes = scheduler.apply_answer(term, correct, mode)
+
+        repo.insert_review(self.conn, term["id"],
+                           datetime.now(timezone.utc).isoformat(), guess, correct)
+        repo.update_term_progress(self.conn, term["id"], changes["status"],
+                                  changes["streak"], changes["wrong_streak"])
+        self.conn.commit()
+        self.cooldowns[mode].record_answer(term["id"], correct)
+
         now = changes["status"]
         return {
             "ok": True,
@@ -93,7 +112,8 @@ class App:
         term = repo.get_term(self.conn, term_id)
         if term is None or term["status"] != scheduler.KNOWN:
             return {"ok": False, "message": "Only known words can be mastered."}
-        self.sessions[scheduler.REVIEW].mark_mastered(term_id)
+        repo.mark_mastered(self.conn, term_id)
+        self.conn.commit()
         return {"ok": True, "message": f"{term['hanzi']} mastered."}
 
     def stats(self):
@@ -104,6 +124,6 @@ class App:
                                scheduler.KNOWN, scheduler.MASTERED)}
 
     def _checked(self, mode):
-        if mode not in self.sessions:
+        if mode not in self.cooldowns:
             raise ValueError(f"unknown mode: {mode}")
         return mode
