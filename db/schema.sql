@@ -1,6 +1,6 @@
 PRAGMA foreign_keys = ON;
 
-CREATE TABLE terms (
+CREATE TABLE IF NOT EXISTS terms (
     id INTEGER PRIMARY KEY,
     hanzi TEXT NOT NULL UNIQUE,
     pinyin TEXT NOT NULL,
@@ -9,7 +9,7 @@ CREATE TABLE terms (
     due_at TEXT
 );
 
-CREATE TABLE imports (
+CREATE TABLE IF NOT EXISTS imports (
     id INTEGER PRIMARY KEY,
     filename TEXT NOT NULL,
     source TEXT,
@@ -17,13 +17,13 @@ CREATE TABLE imports (
     imported_at TEXT NOT NULL
 );
 
-CREATE TABLE sightings (
+CREATE TABLE IF NOT EXISTS sightings (
     id INTEGER PRIMARY KEY,
     term_id INTEGER NOT NULL REFERENCES terms(id),
     import_id INTEGER NOT NULL REFERENCES imports(id)
 );
 
-CREATE TABLE reviews (
+CREATE TABLE IF NOT EXISTS reviews (
     id INTEGER PRIMARY KEY,
     term_id INTEGER NOT NULL REFERENCES terms(id),
     reviewed_at TEXT NOT NULL,
