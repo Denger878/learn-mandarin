@@ -133,3 +133,45 @@ def test_migrate_adds_wrong_streak_to_an_older_db(conn):
     repo.migrate(conn)
     conn.commit()
     assert repo.get_term(conn, 1)["wrong_streak"] == 0
+
+
+# --- dictionary ------------------------------------------------------------
+
+def define(conn, *pairs):
+    repo.replace_definitions(conn, pairs)
+    conn.commit()
+
+def test_a_term_picks_up_its_dictionary_meaning(conn):
+    term_id = add(conn, "明天", "mingtian", "dm")
+    define(conn, ("明天", "tomorrow"))
+    assert repo.get_term(conn, term_id)["meaning"] == "tomorrow"
+    assert repo.learn_queue(conn)[0]["meaning"] == "tomorrow"
+
+def test_your_own_meaning_beats_the_dictionary(conn):
+    term_id = add(conn, "明天", "mingtian", "dm")
+    define(conn, ("明天", "tomorrow"))
+    repo.set_meaning(conn, term_id, "the day after today")
+    conn.commit()
+    assert repo.get_term(conn, term_id)["meaning"] == "the day after today"
+
+def test_an_undefined_term_has_no_meaning(conn):
+    term_id = add(conn, "明天", "mingtian", "dm")
+    define(conn, ("今天", "today"))
+    assert repo.get_term(conn, term_id)["meaning"] is None
+
+def test_the_dictionary_reaches_the_review_pile(conn):
+    add(conn, "明天", "mingtian", "dm", status="known")
+    define(conn, ("明天", "tomorrow"))
+    assert repo.review_queue(conn)[0]["meaning"] == "tomorrow"
+
+def test_replacing_the_dictionary_drops_the_old_one(conn):
+    define(conn, ("明天", "tomorrow"))
+    define(conn, ("今天", "today"))
+    assert repo.count_definitions(conn) == 1
+    assert repo.lookup_definition(conn, "明天") is None
+    assert repo.lookup_definition(conn, "今天") == "today"
+
+def test_definitions_do_not_duplicate_queue_rows(conn):
+    add(conn, "明天", "mingtian", "dm", times=3)
+    define(conn, ("明天", "tomorrow"))
+    assert len(repo.learn_queue(conn)) == 1

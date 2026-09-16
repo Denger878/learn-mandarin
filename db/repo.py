@@ -13,7 +13,11 @@ SOURCE_WEIGHT_SQL = """
     END
 """
 
-TERM_COLUMNS = "t.id, t.hanzi, t.pinyin, t.meaning, t.status, t.streak, t.wrong_streak"
+# A term's meaning is whatever you typed in, falling back to the dictionary.
+TERM_COLUMNS = ("t.id, t.hanzi, t.pinyin, COALESCE(t.meaning, d.meaning) AS meaning, "
+                "t.status, t.streak, t.wrong_streak")
+
+DEFINITION_JOIN = "LEFT JOIN definitions d ON d.hanzi = t.hanzi"
 
 
 def connect(db_path="mandarin.db"):
@@ -81,6 +85,7 @@ def learn_queue(conn, limit=None):
         FROM terms t
         JOIN sightings s ON s.term_id = t.id
         JOIN imports i ON i.id = s.import_id
+        {DEFINITION_JOIN}
         WHERE t.status IN ('new', 'learning')
         GROUP BY t.id
         ORDER BY weight DESC, t.id ASC
@@ -99,6 +104,7 @@ def review_queue(conn, limit=None):
         FROM terms t
         LEFT JOIN sightings s ON s.term_id = t.id
         LEFT JOIN imports i ON i.id = s.import_id
+        {DEFINITION_JOIN}
         WHERE t.status = 'known'
         GROUP BY t.id
         ORDER BY weight DESC, t.id ASC
@@ -109,7 +115,7 @@ def review_queue(conn, limit=None):
 def get_term(conn, term_id):
     """Return the full term row, or None if there is no such term."""
     return conn.execute(
-        f"SELECT {TERM_COLUMNS} FROM terms t WHERE t.id = ?", (term_id,)
+        f"SELECT {TERM_COLUMNS} FROM terms t {DEFINITION_JOIN} WHERE t.id = ?", (term_id,)
     ).fetchone()
 
 def weighted_frequency(conn, term_id):
@@ -149,3 +155,17 @@ def count_by_status(conn):
     """How many terms sit in each status, as a dict."""
     rows = conn.execute("SELECT status, COUNT(*) FROM terms GROUP BY status").fetchall()
     return {row[0]: row[1] for row in rows}
+
+def replace_definitions(conn, entries):
+    """Swap in a freshly parsed dictionary. `entries` is (hanzi, meaning) pairs."""
+    conn.execute("DELETE FROM definitions")
+    conn.executemany("INSERT INTO definitions (hanzi, meaning) VALUES (?, ?)", entries)
+
+def count_definitions(conn):
+    """How many words the dictionary knows."""
+    return conn.execute("SELECT COUNT(*) FROM definitions").fetchone()[0]
+
+def lookup_definition(conn, hanzi):
+    """The dictionary gloss for one word, or None if it isn't in there."""
+    row = conn.execute("SELECT meaning FROM definitions WHERE hanzi = ?", (hanzi,)).fetchone()
+    return row[0] if row else None

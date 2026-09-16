@@ -7,6 +7,9 @@ weighted frequency, drills them by typing toneless pinyin.
 - All SQL lives in db/repo.py. Nothing else imports sqlite3 or contains SQL.
 - core/ modules are pure logic: no database, no I/O. Testable with fabricated data.
 - Frequency is always derived from the sightings table, never stored as a counter.
+- English meanings are joined in from the definitions table at query time, never
+  copied onto terms. terms.meaning holds only what the user typed; the queries
+  COALESCE over the dictionary so a dictionary reload can't overwrite it.
 - Transactions: repo functions don't commit; the caller does, once per logical operation.
 - web/api.py is the only place core/ and db/ meet. It pulls the ranked pile,
   grades the answer, writes it back, and commits once per card.
