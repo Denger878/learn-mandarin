@@ -57,12 +57,6 @@ def test_term_comes_back_round_and_can_be_answered_again():
     assert s.cooldown_remaining(1) == 1
     assert s.cooldown_remaining(2) == 0
 
-def test_clear_forgets_cooldowns():
-    s = Scheduler()
-    s.record_answer(1, correct=True)
-    s.clear()
-    assert s.next_term([term(1)])["id"] == 1
-
 
 # --- transitions -----------------------------------------------------------
 

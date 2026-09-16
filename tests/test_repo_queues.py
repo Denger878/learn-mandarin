@@ -24,19 +24,26 @@ def add(conn, hanzi, pinyin, source, times=1, status="new"):
 
 
 def test_dm_sightings_outrank_gc(conn):
-    gc = add(conn, "明天", "mingtian", "gc", times=3)
+    gc = add(conn, "明天", "mingtian", "gc", times=6)
     dm = add(conn, "今天", "jintian", "dm", times=2)
     assert [r["id"] for r in repo.learn_queue(conn)] == [dm, gc]
 
-def test_discovery_counts_half(conn):
-    disc = add(conn, "明天", "mingtian", "discovery", times=3)
-    gc = add(conn, "今天", "jintian", "gc", times=2)
-    assert repo.weighted_frequency(conn, disc) == 1.5
-    assert [r["id"] for r in repo.learn_queue(conn)] == [gc, disc]
+def test_gc_counts_half(conn):
+    gc = add(conn, "明天", "mingtian", "gc", times=3)
+    disc = add(conn, "今天", "jintian", "discovery", times=2)
+    assert repo.weighted_frequency(conn, gc) == 1.5
+    # fewer discovery sightings still outrank more gc ones
+    assert [r["id"] for r in repo.learn_queue(conn)] == [disc, gc]
+
+def test_discovery_counts_the_same_as_no_source(conn):
+    disc = add(conn, "明天", "mingtian", "discovery", times=2)
+    plain = add(conn, "今天", "jintian", None, times=2)
+    assert repo.weighted_frequency(conn, disc) == repo.weighted_frequency(conn, plain) == 2.0
 
 def test_equal_weight_falls_back_to_insertion_order(conn):
-    first = add(conn, "明天", "mingtian", "discovery", times=2)
-    second = add(conn, "今天", "jintian", "gc", times=1)
+    first = add(conn, "明天", "mingtian", "discovery", times=1)   # 1 x 1.0
+    second = add(conn, "今天", "jintian", "gc", times=2)          # 2 x 0.5
+    assert repo.weighted_frequency(conn, first) == repo.weighted_frequency(conn, second)
     assert [r["id"] for r in repo.learn_queue(conn)] == [first, second]
 
 def test_null_source_counts_as_one(conn):

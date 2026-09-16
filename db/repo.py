@@ -7,8 +7,8 @@ SCHEMA_PATH = Path(__file__).parent / "schema.sql"
 SOURCE_WEIGHT_SQL = """
     CASE i.source
         WHEN 'dm' THEN 2.0
-        WHEN 'gc' THEN 1.0
-        WHEN 'discovery' THEN 0.5
+        WHEN 'gc' THEN 0.5
+        WHEN 'discovery' THEN 1.0
         ELSE 1.0
     END
 """

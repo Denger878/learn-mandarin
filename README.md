@@ -46,10 +46,28 @@ side and use the Vite URL:
 
     core/      pure logic: segmenting, pinyin comparison, the scheduler, CEDICT parsing
     db/        every line of SQL in the project
-    ingest/    turning pasted text into sightings
+    ingest/    pasted text into sightings, and CC-CEDICT into definitions
     web/       the JSON API (api.py) and the local HTTP server (server.py)
     frontend/  React interface (Vite); builds into web/dist
     tests/     pytest
+
+## How words are ranked
+
+A word's rank is its **weighted sighting count**. Every time a word appears in
+something you import, that's one sighting, weighted by where the text came from:
+
+    dm 2.0    discovery 1.0    other 1.0    gc 0.5
+
+So a word seen twice in a DM outranks one seen three times in a group chat.
+
+Nothing about this is stored. Both queues re-sum the entire sightings table on
+every request, which has two consequences worth knowing:
+
+- A new import re-ranks everything, including words from imports months old. A
+  word you half-learned rises again the moment it turns up in new text.
+- The `terms` table is never reordered. Rank exists only in the result of the
+  query, so deleting a bad import corrects the ranking with no cleanup and no
+  writes.
 
 ## The English definitions
 
@@ -66,3 +84,13 @@ wording always wins and a dictionary update never overwrites it.
 CC-CEDICT is community maintained, published by [MDBG](https://www.mdbg.net/chinese/dictionary?page=cc-cedict)
 under the [Creative Commons Attribution-ShareAlike 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
 licence.
+
+## If it won't start
+
+`OSError: [Errno 48] Address already in use` means a server is already running,
+usually one left in another terminal. Find it and stop it:
+
+    lsof -nP -iTCP:8000 -sTCP:LISTEN
+
+Worth checking whenever the app looks out of date too: an old process keeps
+serving the code it started with.

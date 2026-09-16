@@ -1,24 +1,9 @@
-"""Parsing for CC-CEDICT lines. Pure text handling: no database, no files.
-
-One line of the dictionary looks like this:
-
-    明天 明天 [ming2 tian1] /tomorrow/the future/
-
-traditional first, then simplified, then the pinyin, then the senses between
-slashes. A flashcard only needs a short gloss, so the senses get trimmed down.
-"""
-
 import re
 
 ENTRY = re.compile(r"^(\S+)\s+(\S+)\s+\[[^\]]*\]\s+/(.+)/\s*$")
-
-# Definitions quote other words as 明天[ming2 tian1]; the bracketed pinyin is
-# noise on a card, so it comes out.
 QUOTED_PINYIN = re.compile(r"\s*\[[^\]]*\]")
-
 MAX_SENSES = 4
 MAX_LENGTH = 160
-
 
 def parse_line(line):
     """Return (traditional, simplified, senses), or None for comments and junk."""
@@ -36,7 +21,6 @@ def parse_line(line):
     if not senses:
         return None
     return traditional, simplified, senses
-
 
 def condense(senses):
     """Join senses into one short gloss: 'tomorrow; the future'."""

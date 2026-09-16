@@ -12,14 +12,7 @@ DEMOTION_WRONG_STREAK = 3
 WRONG_COOLDOWN = 50
 CORRECT_COOLDOWN = 100
 
-
 class Scheduler:
-    """Serves terms from a ranked list, skipping anything still on cooldown.
-
-    Terms are never repositioned in a queue. The caller re-reads the ranked
-    list as often as it likes; this object only remembers how many more cards
-    must go by before each recently answered term may come round again.
-    """
 
     def __init__(self, wrong_cooldown=WRONG_COOLDOWN, correct_cooldown=CORRECT_COOLDOWN):
         self.wrong_cooldown = wrong_cooldown
@@ -27,10 +20,7 @@ class Scheduler:
         self.cooldowns = {}
 
     def next_term(self, terms):
-        """Return the highest-ranked term not on cooldown, or None.
-
-        `terms` is expected to already be in the order the mode wants them.
-        """
+        """Return the highest-ranked term not on cooldown, or None."""
         for term in terms:
             if self.cooldowns.get(term["id"], 0) <= 0:
                 return term
@@ -47,10 +37,6 @@ class Scheduler:
     def cooldown_remaining(self, term_id):
         """Cards left before this term may be served again. 0 means available."""
         return self.cooldowns.get(term_id, 0)
-
-    def clear(self):
-        """Forget all cooldowns. Called when a session ends."""
-        self.cooldowns.clear()
 
 
 def apply_answer(term, correct, mode):
