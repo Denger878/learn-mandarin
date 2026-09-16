@@ -185,7 +185,6 @@ function DrillPanel({ mode, active, onChanged }) {
                   value={guess}
                   onChange={(e) => setGuess(e.target.value)}
                   disabled={Boolean(result)}
-                  placeholder="pinyin, no tones"
                   autoComplete="off"
                   spellCheck="false"
                 />
@@ -193,6 +192,7 @@ function DrillPanel({ mode, active, onChanged }) {
                   check
                 </button>
               </form>
+              {!result && <p className="hint">pinyin, no tones</p>}
 
               {result && (
                 <div className="result">

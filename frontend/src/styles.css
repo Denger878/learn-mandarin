@@ -238,6 +238,17 @@ button.solid:hover { background: #000; }
 }
 
 .guess:disabled { background: var(--paper); color: var(--ink-light); }
+
+/* the hint sits under the field rather than inside it, so the caret has the
+   centre to itself instead of blinking in the middle of grey placeholder text */
+.hint {
+  margin-top: 0.7rem;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
 .guess-form button { flex: none; }
 
 .result {

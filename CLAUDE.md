@@ -54,7 +54,7 @@ keeping its frequency-derived rank.
 Mastered: user can manually mark a known word as mastered; it is never shown again.
 
 Instead of repositioning terms in a queue, the scheduler holds an in-memory
-cooldown: term_id -> cards remaining. Wrong = 50 cards, correct = 100 cards.
+cooldown: term_id -> cards remaining. Wrong = 25 cards, correct = 50 cards.
 next_term returns the highest-ranked term not on cooldown.
 
 The cooldown is a plain dict on the Scheduler object, held by App.cooldowns and

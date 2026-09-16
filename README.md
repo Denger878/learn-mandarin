@@ -42,6 +42,11 @@ side and use the Vite URL:
 - **review known words** — drills the words you already know. Three wrong in a
   row sends one back to learning. A word can be marked mastered to retire it.
 
+A word you've just answered won't come back for another 50 cards (25 if you got
+it wrong), so you never see the same word twice in a row. If a pile is smaller
+than that it will run out and say so; restarting the server clears the
+cooldowns, since they only live in memory.
+
 ## Layout
 
     core/      pure logic: segmenting, pinyin comparison, the scheduler, CEDICT parsing
@@ -50,6 +55,13 @@ side and use the Vite URL:
     web/       the JSON API (api.py) and the local HTTP server (server.py)
     frontend/  React interface (Vite); builds into web/dist
     tests/     pytest
+
+### Tests
+
+    python -m pytest
+
+The four tests that check the served page skip unless `web/dist` exists, so
+build the frontend first if you want the full run.
 
 ## How words are ranked
 
