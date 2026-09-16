@@ -13,7 +13,7 @@ First time only:
 
 Then, any time:
 
-    python -m web.server
+    python -m web.server            # --port and --db if you need them
 
 Open http://127.0.0.1:8000. Everything runs on this machine and writes to
 `mandarin.db` in the working directory. Nothing is deployed and nothing leaves
@@ -87,10 +87,19 @@ licence.
 
 ## If it won't start
 
-`OSError: [Errno 48] Address already in use` means a server is already running,
-usually one left in another terminal. Find it and stop it:
+"Port 8000 is already in use" means a server is still running, usually one left
+in another terminal. `lsof` only tells you which process it is -- you have to
+stop it yourself:
 
     lsof -nP -iTCP:8000 -sTCP:LISTEN
+    kill <PID>
 
-Worth checking whenever the app looks out of date too: an old process keeps
-serving the code it started with.
+Or leave it alone and start on another port:
+
+    python -m web.server --port 8001
+
+Killing a server never loses anything; every answer is committed as you give it.
+
+Worth checking whenever the app looks out of date, too. An old process keeps
+serving the code and the frontend build it started with, so a change you just
+made won't show up until you restart it.

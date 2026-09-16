@@ -4,6 +4,8 @@ Single threaded on purpose: one person drilling in one browser, one SQLite
 connection, no locking to think about.
 """
 
+import argparse
+import errno
 import json
 from functools import partial
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -147,7 +149,13 @@ def create_server(db_path="mandarin.db", host="127.0.0.1", port=8000):
 
 
 def serve(db_path="mandarin.db", host="127.0.0.1", port=8000):
-    server = create_server(db_path, host, port)
+    try:
+        server = create_server(db_path, host, port)
+    except OSError as exc:
+        if exc.errno != errno.EADDRINUSE:
+            raise
+        raise SystemExit(port_in_use_message(port))
+
     host, port = server.server_address[:2]
     print(f"learn-mandarin running at http://{host}:{port}  (ctrl-c to stop)")
     try:
@@ -158,5 +166,27 @@ def serve(db_path="mandarin.db", host="127.0.0.1", port=8000):
         server.server_close()
 
 
+def port_in_use_message(port):
+    """Something is already listening. Say what to do about it, not a traceback."""
+    return (
+        f"\nPort {port} is already in use.\n\n"
+        "A server is probably still running from another terminal. Note that it\n"
+        "is serving the code it started with, so it won't have picked up any\n"
+        "recent changes. Find it and stop it:\n\n"
+        f"    lsof -nP -iTCP:{port} -sTCP:LISTEN\n"
+        "    kill <PID>\n\n"
+        "Or start this one on a different port:\n\n"
+        f"    python -m web.server --port {port + 1}\n"
+    )
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Run the learn-mandarin trainer.")
+    parser.add_argument("--port", type=int, default=8000, help="default 8000")
+    parser.add_argument("--db", default="mandarin.db", help="default mandarin.db")
+    args = parser.parse_args()
+    serve(args.db, port=args.port)
+
+
 if __name__ == "__main__":
-    serve()
+    main()
