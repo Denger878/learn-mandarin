@@ -26,8 +26,3 @@ def ingest_text(conn, text, filename, source=None):
     conn.commit()
     return count
 
-def ingest_file(conn, path, source=None):
-    """Read a file and hand its contents to ingest_text."""
-    path = Path(path)
-    text = path.read_text(encoding="utf-8")
-    return ingest_text(conn, text, path.name, source)
